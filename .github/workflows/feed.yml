@@ -1,0 +1,29 @@
+name: feed
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: feed
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      # build.ts fails the run on any non-200 page or an empty feed, so a bad feed is never published
+      - run: bun build.ts feed.xml
+      # A commit every run (lastBuildDate changes) keeps GitHub from disabling this schedule after 60 idle days
+      - run: |
+          git fetch --depth 1 origin gh-pages
+          git worktree add pages FETCH_HEAD
+          cp feed.xml pages/feed.xml
+          cd pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add feed.xml
+          git commit -m "feed $(date -u +%F)"
+          git push origin HEAD:gh-pages
