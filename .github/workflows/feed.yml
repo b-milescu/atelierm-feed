@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      allow_drop:
+        description: "Publish even if the feed lost over 10% of its products (a real bulk removal in the shop)"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: feed
@@ -14,12 +19,18 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.4
-      # build.ts fails the run on any non-200 page or an empty feed, so a bad feed is never published
+      # build.ts fails the run on any non-200 page, a partial read (count != x-wp-total) or an empty feed
       - run: bun build.ts feed.xml
       # A commit every run (lastBuildDate changes) keeps GitHub from disabling this schedule after 60 idle days
       - run: |
           git fetch --depth 1 origin gh-pages
           git worktree add pages FETCH_HEAD
+          old=$(grep -c '<item>' pages/feed.xml || true)
+          new=$(grep -c '<item>' feed.xml)
+          if [ "${{ inputs.allow_drop }}" != "true" ] && [ $((new * 10)) -lt $((old * 9)) ]; then
+            echo "::error::feed shrank from $old to $new products; refusing to publish (run manually with allow_drop if the shop really removed them)"
+            exit 1
+          fi
           cp feed.xml pages/feed.xml
           cd pages
           git config user.name "github-actions[bot]"

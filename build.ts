@@ -9,13 +9,17 @@ type Product = {
 };
 
 const products: Product[] = [];
+let total: number | undefined;
 for (let page = 1; ; page++) {
   const res = await fetch(`${SITE}/wp-json/wc/store/v1/products?per_page=100&page=${page}`);
   if (!res.ok) throw new Error(`page ${page}: HTTP ${res.status}`);
+  total ??= Number(res.headers.get("x-wp-total") ?? NaN);
   const batch = (await res.json()) as Product[];
   products.push(...batch);
-  if (page >= Number(res.headers.get("x-wp-totalpages"))) break;
+  if (batch.length < 100 || products.length >= total) break;
 }
+// A missing or mismatched total means a partial read; publishing it would delist the missing products.
+if (products.length !== total) throw new Error(`read ${products.length} products but the shop reports x-wp-total=${total}`);
 
 const decode = (s: string) => s
   .replace(/<[^>]+>/g, " ")
