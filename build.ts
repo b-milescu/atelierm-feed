@@ -38,10 +38,11 @@ const GPC: [RegExp, number][] = [
   [/\/trench\//, 5598], // Coats & Jackets
   [/\/(bluze|tricouri|hanorace|cardigane)\//, 212], // Shirts & Tops
   [/set-cercei-brosa\//, 6463], // Jewelry Sets
-  [/\/(brosa|martisor)\//, 197], // Brooches & Lapel Pins
+  [/\/brosa\//, 197], // Brooches & Lapel Pins
   [/\/cercei\//, 194], // Earrings
   [/\/coliere\//, 196], // Necklaces
   [/\/bijuterii\//, 188], // Jewelry
+  [/\/martisor\//, 197], // mărțișor without a jewelry type is worn as a brooch; after the jewelry rules since earrings and necklaces carry this tag too
   [/\/posete\//, 3032], // Handbags
   [/\/rucsacuri\//, 100], // Backpacks
   [/\/papusi\//, 1257], // Dolls
